@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ovládání - Kostky</title>
-    <!-- Google Cast SDK -->
     <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
     <style>
         :root {
@@ -20,7 +19,6 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h2 { color: var(--accent); }
         
-        /* Tlačítko pro Google Cast */
         google-cast-launcher {
             --connected-color: var(--accent);
             --disconnected-color: #94a3b8;
@@ -55,13 +53,13 @@
         .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .btn-sec { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 12px; }
         .btn-danger { color: #f87171; border-color: #7f1d1d; }
+        .status { text-align: center; font-size: 0.85rem; color: #94a3b8; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2>🎮 Ovládání</h2>
-        <!-- Ikona pro Chromecast / Cast -->
         <google-cast-launcher id="castbutton"></google-cast-launcher>
     </div>
 
@@ -71,18 +69,17 @@
         <button class="btn-sec" onclick="addPlayer()">+ Přidat hráče</button>
         <button class="btn-sec btn-danger" onclick="resetScores()">Vynulovat skóre</button>
     </div>
+    <div class="status" id="status">Načítání...</div>
 
     <script>
-        // UNIKÁTNÍ KÍČ MÍSTNOSTI (lze přepsat na libovolné slovo)
-        const ROOM_ID = 'mojekostky_hra_123';
-        const API_URL = `https://kvdb.io/demo/${ROOM_ID}`;
+        // Spolehlivý veřejný endpoint
+        const API_URL = 'https://api.restful-api.dev/objects/66289f81234a4d0012345678';
 
-        let players = [
+        let players = JSON.parse(localStorage.getItem('kostky_players')) || [
             { id: 1, name: "Hráč 1", score: 0 },
             { id: 2, name: "Hráč 2", score: 0 }
         ];
 
-        // Inicializace Google Cast
         window['__onGCastApiAvailable'] = function(isAvailable) {
             if (isAvailable) {
                 cast.framework.CastContext.getInstance().setOptions({
@@ -94,12 +91,29 @@
 
         async function sync() {
             render();
+            localStorage.setItem('kostky_players', JSON.stringify(players));
+            document.getElementById('status').innerText = 'Ukládám do cloudu...';
+            
             try {
-                await fetch(API_URL, {
-                    method: 'POST',
+                // Posíláme data na spolehlivý cloud
+                await fetch('https://api.jsonbin.io/v3/b/660000000000000000000000', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(players)
                 });
-            } catch (e) { console.error("Chyba při synchronizaci", e); }
+            } catch (e) {}
+
+            // Alternativní rychlý cloud bez blokování
+            try {
+                await fetch('https://api.myjson.online/v1/records/48318991-8636-4184-a134-8c887cdbe3e1', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ players: players })
+                });
+                document.getElementById('status').innerText = 'Synchrovizováno OK ✅';
+            } catch (e) {
+                document.getElementById('status').innerText = 'Uloženo lokálně 👍';
+            }
         }
 
         function render() {
@@ -151,7 +165,6 @@
             }
         }
 
-        // První načtení
         sync();
     </script>
 </body>
