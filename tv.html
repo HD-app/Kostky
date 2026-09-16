@@ -61,14 +61,15 @@
     <div class="scoreboard" id="board">Načítání výsledků...</div>
 
     <script>
+        const FIREBASE_URL = 'https://klubac-laser-game-default-rtdb.europe-west1.firebasedatabase.app/hra.json';
+
         async function fetchScore() {
             try {
-                const res = await fetch('https://api.myjson.online/v1/records/48318991-8636-4184-a134-8c887cdbe3e1');
+                const res = await fetch(FIREBASE_URL);
                 if (!res.ok) return;
-                const json = await res.json();
-                const players = json.data.players;
+                const players = await res.json();
                 
-                if (players && players.length > 0) {
+                if (players && Array.isArray(players) && players.length > 0) {
                     const board = document.getElementById('board');
                     board.innerHTML = players.map(p => `
                         <div class="card">
@@ -82,8 +83,8 @@
             }
         }
 
-        // Aktualizuje TV každou 1 sekundu
-        setInterval(fetchScore, 1000);
+        // Blesková aktualizace na TV každých 800 milisekund
+        setInterval(fetchScore, 800);
         fetchScore();
     </script>
 </body>
