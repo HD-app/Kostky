@@ -53,7 +53,7 @@
         .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .btn-sec { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 12px; }
         .btn-danger { color: #f87171; border-color: #7f1d1d; }
-        .status { text-align: center; font-size: 0.85rem; color: #94a3b8; margin-top: 10px; }
+        .status { text-align: center; font-size: 0.85rem; color: #38bdf8; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -69,13 +69,12 @@
         <button class="btn-sec" onclick="addPlayer()">+ Přidat hráče</button>
         <button class="btn-sec btn-danger" onclick="resetScores()">Vynulovat skóre</button>
     </div>
-    <div class="status" id="status">Načítání...</div>
+    <div class="status" id="status">Připojování k Firebase...</div>
 
     <script>
-        // Spolehlivý veřejný endpoint
-        const API_URL = 'https://api.restful-api.dev/objects/66289f81234a4d0012345678';
+        const FIREBASE_URL = 'https://klubac-laser-game-default-rtdb.europe-west1.firebasedatabase.app/hra.json';
 
-        let players = JSON.parse(localStorage.getItem('kostky_players')) || [
+        let players = [
             { id: 1, name: "Hráč 1", score: 0 },
             { id: 2, name: "Hráč 2", score: 0 }
         ];
@@ -89,30 +88,34 @@
             }
         };
 
+        async function loadInitial() {
+            try {
+                const res = await fetch(FIREBASE_URL);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && Array.isArray(data)) {
+                        players = data;
+                    }
+                }
+            } catch (e) {
+                console.error("Chyba při načítání", e);
+            }
+            render();
+            document.getElementById('status').innerText = 'Připojeno k Firebase 🔥';
+        }
+
         async function sync() {
             render();
-            localStorage.setItem('kostky_players', JSON.stringify(players));
             document.getElementById('status').innerText = 'Ukládám do cloudu...';
-            
             try {
-                // Posíláme data na spolehlivý cloud
-                await fetch('https://api.jsonbin.io/v3/b/660000000000000000000000', {
+                await fetch(FIREBASE_URL, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(players)
                 });
-            } catch (e) {}
-
-            // Alternativní rychlý cloud bez blokování
-            try {
-                await fetch('https://api.myjson.online/v1/records/48318991-8636-4184-a134-8c887cdbe3e1', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ players: players })
-                });
-                document.getElementById('status').innerText = 'Synchrovizováno OK ✅';
+                document.getElementById('status').innerText = 'Uloženo ✅';
             } catch (e) {
-                document.getElementById('status').innerText = 'Uloženo lokálně 👍';
+                document.getElementById('status').innerText = 'Chyba ukládání ❌';
             }
         }
 
@@ -165,7 +168,7 @@
             }
         }
 
-        sync();
+        loadInitial();
     </script>
 </body>
 </html>
