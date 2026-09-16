@@ -61,30 +61,29 @@
     <div class="scoreboard" id="board">Načítání výsledků...</div>
 
     <script>
-        // MUSÍ BÝT STEJNÝ KLÍČ JAKO V INDEX.HTML
-        const ROOM_ID = 'mojekostky_hra_123';
-        const API_URL = `https://kvdb.io/demo/${ROOM_ID}`;
-
         async function fetchScore() {
             try {
-                const res = await fetch(API_URL);
+                const res = await fetch('https://api.myjson.online/v1/records/48318991-8636-4184-a134-8c887cdbe3e1');
                 if (!res.ok) return;
-                const players = await res.json();
+                const json = await res.json();
+                const players = json.data.players;
                 
-                const board = document.getElementById('board');
-                board.innerHTML = players.map(p => `
-                    <div class="card">
-                        <div class="name">${p.name}</div>
-                        <div class="score">${p.score}</div>
-                    </div>
-                `).join('');
+                if (players && players.length > 0) {
+                    const board = document.getElementById('board');
+                    board.innerHTML = players.map(p => `
+                        <div class="card">
+                            <div class="name">${p.name}</div>
+                            <div class="score">${p.score}</div>
+                        </div>
+                    `).join('');
+                }
             } catch (e) {
                 console.log("Čekání na data...");
             }
         }
 
-        // Automatické načítání změn každé 1,5 sekundy
-        setInterval(fetchScore, 1500);
+        // Aktualizuje TV každou 1 sekundu
+        setInterval(fetchScore, 1000);
         fetchScore();
     </script>
 </body>
